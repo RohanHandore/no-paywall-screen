@@ -17,6 +17,7 @@ const state = {
   // Window management properties
   mainWindow: null as BrowserWindow | null,
   isWindowVisible: false,
+  isClickThrough: false, // Track click-through state
   windowPosition: null as { x: number; y: number } | null,
   windowSize: null as { width: number; height: number } | null,
   screenWidth: 0,
@@ -81,6 +82,7 @@ export interface IShortcutsHelperDeps {
   setView: (view: "queue" | "solutions" | "debug") => void
   isVisible: () => boolean
   toggleMainWindow: () => void
+  toggleClickThrough: () => void
   moveWindowLeft: () => void
   moveWindowRight: () => void
   moveWindowUp: () => void
@@ -101,6 +103,7 @@ export interface IIpcHandlerDeps {
   takeScreenshot: () => Promise<string>
   getView: () => "queue" | "solutions" | "debug"
   toggleMainWindow: () => void
+  toggleClickThrough: () => void
   clearQueues: () => void
   setView: (view: "queue" | "solutions" | "debug") => void
   moveWindowLeft: () => void
@@ -138,6 +141,7 @@ function initializeHelpers() {
     setView,
     isVisible: () => state.isWindowVisible,
     toggleMainWindow,
+    toggleClickThrough,
     moveWindowLeft: () =>
       moveWindowHorizontal((x) =>
         Math.max(-(state.windowSize?.width || 0) / 2, x - state.step)
@@ -408,7 +412,8 @@ function showMainWindow(): void {
         ...state.windowSize
       });
     }
-    state.mainWindow.setIgnoreMouseEvents(false);
+    // Respect click-through state when showing window
+    state.mainWindow.setIgnoreMouseEvents(state.isClickThrough, { forward: state.isClickThrough });
     state.mainWindow.setAlwaysOnTop(true, "screen-saver", 1);
     state.mainWindow.setVisibleOnAllWorkspaces(true, {
       visibleOnFullScreen: true
@@ -418,7 +423,7 @@ function showMainWindow(): void {
     state.mainWindow.showInactive(); // Use showInactive instead of show+focus
     state.mainWindow.setOpacity(1); // Then set opacity to 1 after showing
     state.isWindowVisible = true;
-    console.log('Window shown with showInactive(), opacity set to 1');
+    console.log(`Window shown with showInactive(), opacity set to 1, click-through: ${state.isClickThrough}`);
   }
 }
 
@@ -428,6 +433,20 @@ function toggleMainWindow(): void {
     hideMainWindow();
   } else {
     showMainWindow();
+  }
+}
+
+function toggleClickThrough(): void {
+  if (!state.mainWindow?.isDestroyed()) {
+    state.isClickThrough = !state.isClickThrough;
+    // Enable click-through mode - mouse events will pass through the window
+    state.mainWindow.setIgnoreMouseEvents(state.isClickThrough, { forward: state.isClickThrough });
+    console.log(`Click-through mode ${state.isClickThrough ? 'ENABLED' : 'DISABLED'}`);
+    
+    // Notify frontend if needed
+    if (state.mainWindow) {
+      state.mainWindow.webContents.send("click-through-toggled", state.isClickThrough);
+    }
   }
 }
 
@@ -543,6 +562,7 @@ async function initializeApp() {
       takeScreenshot,
       getView,
       toggleMainWindow,
+      toggleClickThrough,
       clearQueues,
       setView,
       moveWindowLeft: () =>
@@ -692,6 +712,7 @@ export {
   hideMainWindow,
   showMainWindow,
   toggleMainWindow,
+  toggleClickThrough,
   setWindowDimensions,
   moveWindowHorizontal,
   moveWindowVertical,

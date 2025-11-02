@@ -42,6 +42,7 @@ chmod +x stealth-run.sh
 ## 📋 Essential Keyboard Shortcuts
 
 - `Ctrl+B` (or `Cmd+B`) - Toggle window visibility
+- `Ctrl+T` (or `Cmd+T`) - Toggle click-through mode (mouse clicks pass through the app)
 - `Ctrl+H` - Take screenshot of coding problem
 - `Ctrl+Enter` - Process screenshots and get AI solution
 - `Ctrl+R` - Start new problem
@@ -71,12 +72,14 @@ chmod +x stealth-run.sh
 
 ### 5. **Discrete Assistance**
    - The window can be made invisible to most screen sharing tools
+   - **Click-Through Mode**: Enable click-through to make the app completely transparent to mouse clicks - your mouse will interact with windows behind the app
    - Works during remote interviews without being detected
    - Adjustable opacity for subtle reference during coding
 
 ## 🎯 Key Features
 
 - ✅ **Automatic Language Detection** - No need to manually select the programming language
+- ✅ **Click-Through Mode** - Toggle click-through to make the app transparent to mouse clicks
 - ✅ **AI-Powered Solutions** - Get detailed solutions with explanations
 - ✅ **Debugging Assistant** - Fix errors with structured AI feedback
 - ✅ **Privacy-Focused** - Your code and API key stay on your machine

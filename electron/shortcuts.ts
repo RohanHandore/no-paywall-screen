@@ -159,6 +159,12 @@ export class ShortcutsHelper {
       }
     })
     
+    // Toggle click-through mode shortcut (Ctrl+T or Cmd+T)
+    globalShortcut.register("CommandOrControl+T", () => {
+      console.log("Command/Ctrl + T pressed. Toggling click-through mode.")
+      this.deps.toggleClickThrough()
+    })
+    
     // Unregister shortcuts when quitting
     app.on("will-quit", () => {
       globalShortcut.unregisterAll()
