@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react"
 import Queue from "../_pages/Queue"
 import Solutions from "../_pages/Solutions"
 import { useToast } from "../contexts/toast"
+import { ModeSwitcher } from "../components/Interview/ModeSwitcher"
+
+type InterviewMode = "coding" | "system-design-hld" | "system-design-lld";
 
 interface SubscribedAppProps {
   credits: number
@@ -18,6 +21,7 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
 }) => {
   const queryClient = useQueryClient()
   const [view, setView] = useState<"queue" | "solutions" | "debug">("queue")
+  const [interviewMode, setInterviewMode] = useState<InterviewMode>("coding")
   const containerRef = useRef<HTMLDivElement>(null)
   const { showToast } = useToast()
 
@@ -134,22 +138,74 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
     return () => cleanupFunctions.forEach((fn) => fn())
   }, [view])
 
+  const handleModeChange = (mode: InterviewMode) => {
+    setInterviewMode(mode);
+    // Reset view to queue when changing modes
+    setView("queue");
+    // Clear queries
+    queryClient.invalidateQueries();
+  };
+
   return (
     <div ref={containerRef} className="min-h-0">
-      {view === "queue" ? (
-        <Queue
-          setView={setView}
-          credits={credits}
-          currentLanguage={currentLanguage}
-          setLanguage={setLanguage}
-        />
-      ) : view === "solutions" ? (
-        <Solutions
-          setView={setView}
-          credits={credits}
-          currentLanguage={currentLanguage}
-          setLanguage={setLanguage}
-        />
+      {/* Mode Switcher at the top */}
+      <div className="px-4 py-3 border-b border-white/10">
+        <ModeSwitcher onModeChange={handleModeChange} />
+      </div>
+      
+      {/* Content based on mode */}
+      {interviewMode === "coding" ? (
+        <>
+          {view === "queue" ? (
+            <Queue
+              setView={setView}
+              credits={credits}
+              currentLanguage={currentLanguage}
+              setLanguage={setLanguage}
+            />
+          ) : view === "solutions" ? (
+            <Solutions
+              setView={setView}
+              credits={credits}
+              currentLanguage={currentLanguage}
+              setLanguage={setLanguage}
+            />
+          ) : null}
+        </>
+      ) : interviewMode === "system-design-hld" ? (
+        <div className="p-6 text-white">
+          <div className="text-center space-y-4">
+            <div className="text-6xl">🏗️</div>
+            <h2 className="text-2xl font-bold">High-Level Design Mode</h2>
+            <p className="text-white/60">
+              System architecture design interface coming soon...
+            </p>
+            <p className="text-sm text-white/40">
+              This mode will include:
+              <br />✓ Component library (Load Balancer, Cache, DB, etc.)
+              <br />✓ Architecture canvas
+              <br />✓ Design checklist
+              <br />✓ AI-powered suggestions
+            </p>
+          </div>
+        </div>
+      ) : interviewMode === "system-design-lld" ? (
+        <div className="p-6 text-white">
+          <div className="text-center space-y-4">
+            <div className="text-6xl">🔧</div>
+            <h2 className="text-2xl font-bold">Low-Level Design Mode</h2>
+            <p className="text-white/60">
+              Class design interface coming soon...
+            </p>
+            <p className="text-sm text-white/40">
+              This mode will include:
+              <br />✓ Class diagram editor
+              <br />✓ Design patterns library
+              <br />✓ API specification panel
+              <br />✓ UML/Sequence diagrams
+            </p>
+          </div>
+        </div>
       ) : null}
     </div>
   )
