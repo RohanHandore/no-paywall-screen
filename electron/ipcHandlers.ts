@@ -428,4 +428,33 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
       return { success: false, error: error.message }
     }
   })
+
+  // System Design helpers
+  ipcMain.handle("detect-current-stage", async (_event, mode: "hld" | "lld") => {
+    try {
+      const aiHelper = deps.getAIInterviewHelper()
+      if (!aiHelper) {
+        return { success: false, error: "AI Interview Helper not initialized" }
+      }
+      const result = await aiHelper.detectCurrentStage(mode)
+      return { success: true, ...result }
+    } catch (error: any) {
+      console.error("Error detecting stage:", error)
+      return { success: false, error: error.message }
+    }
+  })
+
+  ipcMain.handle("analyze-coverage", async (_event, mode: "hld" | "lld", stage: string) => {
+    try {
+      const aiHelper = deps.getAIInterviewHelper()
+      if (!aiHelper) {
+        return { success: false, error: "AI Interview Helper not initialized" }
+      }
+      const coverage = await aiHelper.analyzeSystemDesignCoverage(mode, stage)
+      return { success: true, coverage }
+    } catch (error: any) {
+      console.error("Error analyzing coverage:", error)
+      return { success: false, error: error.message, coverage: [] }
+    }
+  })
 }

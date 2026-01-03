@@ -290,7 +290,11 @@ const electronAPI = {
     return () => {
       ipcRenderer.removeListener("trigger-ai-suggestion", subscription)
     }
-  }
+  },
+  
+  // System Design helpers
+  detectCurrentStage: (mode: "hld" | "lld") => ipcRenderer.invoke("detect-current-stage", mode),
+  analyzeCoverage: (mode: "hld" | "lld", stage: string) => ipcRenderer.invoke("analyze-coverage", mode, stage)
 }
 
 // Before exposing the API

@@ -79,6 +79,10 @@ export interface ElectronAPI {
   generateNextResponse: () => Promise<{ success: boolean; response?: string; error?: string }>
   clearAITranscriptBuffer: () => Promise<{ success: boolean; error?: string }>
   onTriggerAISuggestion: (callback: () => void) => () => void
+  
+  // System Design helpers
+  detectCurrentStage?: (mode: "hld" | "lld") => Promise<{ success: boolean; stage?: string; confidence?: number; error?: string }>
+  analyzeCoverage?: (mode: "hld" | "lld", stage: string) => Promise<{ success: boolean; coverage?: any[]; error?: string }>
 }
 
 declare global {

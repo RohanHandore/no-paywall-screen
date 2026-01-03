@@ -5,6 +5,7 @@ import Queue from "../_pages/Queue"
 import Solutions from "../_pages/Solutions"
 import { useToast } from "../contexts/toast"
 import { ModeSwitcher } from "../components/Interview/ModeSwitcher"
+import { SystemDesignGuide } from "../components/SystemDesign/SystemDesignGuide"
 
 type InterviewMode = "coding" | "system-design-hld" | "system-design-lld";
 
@@ -173,39 +174,9 @@ const SubscribedApp: React.FC<SubscribedAppProps> = ({
           ) : null}
         </>
       ) : interviewMode === "system-design-hld" ? (
-        <div className="p-6 text-white">
-          <div className="text-center space-y-4">
-            <div className="text-6xl">🏗️</div>
-            <h2 className="text-2xl font-bold">High-Level Design Mode</h2>
-            <p className="text-white/60">
-              System architecture design interface coming soon...
-            </p>
-            <p className="text-sm text-white/40">
-              This mode will include:
-              <br />✓ Component library (Load Balancer, Cache, DB, etc.)
-              <br />✓ Architecture canvas
-              <br />✓ Design checklist
-              <br />✓ AI-powered suggestions
-            </p>
-          </div>
-        </div>
+        <SystemDesignGuide mode="hld" />
       ) : interviewMode === "system-design-lld" ? (
-        <div className="p-6 text-white">
-          <div className="text-center space-y-4">
-            <div className="text-6xl">🔧</div>
-            <h2 className="text-2xl font-bold">Low-Level Design Mode</h2>
-            <p className="text-white/60">
-              Class design interface coming soon...
-            </p>
-            <p className="text-sm text-white/40">
-              This mode will include:
-              <br />✓ Class diagram editor
-              <br />✓ Design patterns library
-              <br />✓ API specification panel
-              <br />✓ UML/Sequence diagrams
-            </p>
-          </div>
-        </div>
+        <SystemDesignGuide mode="lld" />
       ) : null}
     </div>
   )
