@@ -948,10 +948,17 @@ ${problemInfo.example_output || "No example output provided."}
 LANGUAGE: ${language}
 
 I need the response in the following format:
-1. Code: A clean, optimized implementation in ${language}
-2. Your Thoughts: A list of key insights and reasoning behind your approach
-3. Time complexity: O(X) with a detailed explanation (at least 2 sentences)
-4. Space complexity: O(X) with a detailed explanation (at least 2 sentences)
+1. Naive Solution (OPTIONAL - only include if a naive/brute force approach exists):
+   - Description: A brief 1-2 line description of the naive approach
+   - Time Complexity: O(X) notation only (e.g., "O(n²)" or "O(2^n)")
+   - If no naive solution exists for this problem, skip this section entirely.
+
+2. Code: A clean, optimized implementation in ${language}
+3. Your Thoughts: A list of key insights and reasoning behind your approach
+4. Time complexity: O(X) with a detailed explanation (at least 2 sentences)
+5. Space complexity: O(X) with a detailed explanation (at least 2 sentences)
+
+IMPORTANT: Only include the "Naive Solution" section if a straightforward brute-force or naive approach exists for this problem. If the problem inherently requires an optimal approach or if a naive solution doesn't make sense, completely omit the naive solution section.
 
 For complexity explanations, please be thorough. For example: "Time complexity: O(n) because we iterate through the array only once. This is optimal as we need to examine each element at least once to find the solution." or "Space complexity: O(n) because in the worst case, we store all elements in the hashmap. The additional space scales linearly with the input size."
 
@@ -1084,6 +1091,46 @@ Your solution should be efficient, well-commented, and handle edge cases.
         }
       }
       
+      // Extract naive solution if present
+      let naiveSolution: { description: string; time_complexity: string } | null = null;
+      
+      // Try multiple patterns to catch different formats
+      const naivePatterns = [
+        // Pattern 1: "Naive Solution" section with Description and Time Complexity
+        /(?:Naive Solution|Naive Approach|Brute Force|Brute-Force)[\s\S]*?(?:Description|Approach):\s*([^\n]+(?:\n[^\n]+)?)[\s\S]*?Time Complexity:?\s*([Oo]\([^)]+\))/i,
+        // Pattern 2: "1. Naive Solution" format
+        /(?:1\.|1\))\s*(?:Naive Solution|Naive Approach)[\s\S]*?(?:Description|Approach):\s*([^\n]+(?:\n[^\n]+)?)[\s\S]*?Time Complexity:?\s*([Oo]\([^)]+\))/i,
+        // Pattern 3: More flexible pattern
+        /(?:Naive|Brute)[\s\S]*?(?:Description|Approach|Method):\s*([^\n]+(?:\n[^\n]+)?)[\s\S]*?Time Complexity:?\s*([Oo]\([^)]+\))/i
+      ];
+      
+      for (const pattern of naivePatterns) {
+        const naiveMatch = responseContent.match(pattern);
+        if (naiveMatch && naiveMatch[1] && naiveMatch[2]) {
+          const description = naiveMatch[1].trim();
+          const timeComplexity = naiveMatch[2].trim();
+          // Only include if we have both description and complexity
+          if (description && timeComplexity && description.length > 10) {
+            // Clean up description - remove extra formatting
+            let cleanDescription = description
+              .replace(/^[-*•]\s*/, '')
+              .replace(/\n+/g, ' ')
+              .trim();
+            
+            // Limit description length
+            if (cleanDescription.length > 200) {
+              cleanDescription = cleanDescription.substring(0, 197) + "...";
+            }
+            
+            naiveSolution = {
+              description: cleanDescription,
+              time_complexity: timeComplexity
+            };
+            break; // Found a match, stop trying other patterns
+          }
+        }
+      }
+      
       // Extract parts from the response
       const codeMatch = responseContent.match(/```(?:\w+)?\s*([\s\S]*?)```/);
       const code = codeMatch ? codeMatch[1].trim() : responseContent;
@@ -1149,7 +1196,8 @@ Your solution should be efficient, well-commented, and handle edge cases.
         code: code,
         thoughts: thoughts.length > 0 ? thoughts : ["Solution approach based on efficiency and readability"],
         time_complexity: timeComplexity,
-        space_complexity: spaceComplexity
+        space_complexity: spaceComplexity,
+        naive_solution: naiveSolution || null
       };
 
       return { success: true, data: formattedResponse };

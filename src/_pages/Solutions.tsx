@@ -192,6 +192,9 @@ const Solutions: React.FC<SolutionsProps> = ({
   const [spaceComplexityData, setSpaceComplexityData] = useState<string | null>(
     null
   )
+  const [naiveSolutionData, setNaiveSolutionData] = useState<{ description: string; time_complexity: string } | null>(
+    null
+  )
 
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
   const [tooltipHeight, setTooltipHeight] = useState(0)
@@ -300,6 +303,7 @@ const Solutions: React.FC<SolutionsProps> = ({
         setThoughtsData(null)
         setTimeComplexityData(null)
         setSpaceComplexityData(null)
+        setNaiveSolutionData(null)
       }),
       window.electronAPI.onProblemExtracted((data) => {
         queryClient.setQueryData(["problem_statement"], data)
@@ -313,6 +317,7 @@ const Solutions: React.FC<SolutionsProps> = ({
           thoughts: string[]
           time_complexity: string
           space_complexity: string
+          naive_solution: { description: string; time_complexity: string } | null
         } | null
         if (!solution) {
           setView("queue")
@@ -321,6 +326,7 @@ const Solutions: React.FC<SolutionsProps> = ({
         setThoughtsData(solution?.thoughts || null)
         setTimeComplexityData(solution?.time_complexity || null)
         setSpaceComplexityData(solution?.space_complexity || null)
+        setNaiveSolutionData(solution?.naive_solution || null)
         console.error("Processing error:", error)
       }),
       //when the initial solution is generated, we'll set the solution data to that
@@ -334,7 +340,8 @@ const Solutions: React.FC<SolutionsProps> = ({
           code: data.code,
           thoughts: data.thoughts,
           time_complexity: data.time_complexity,
-          space_complexity: data.space_complexity
+          space_complexity: data.space_complexity,
+          naive_solution: data.naive_solution || null
         }
 
         queryClient.setQueryData(["solution"], solutionData)
@@ -342,6 +349,7 @@ const Solutions: React.FC<SolutionsProps> = ({
         setThoughtsData(solutionData.thoughts || null)
         setTimeComplexityData(solutionData.time_complexity || null)
         setSpaceComplexityData(solutionData.space_complexity || null)
+        setNaiveSolutionData(solutionData.naive_solution || null)
 
         // Fetch latest screenshots when solution is successful
         const fetchScreenshots = async () => {
@@ -418,12 +426,14 @@ const Solutions: React.FC<SolutionsProps> = ({
           thoughts: string[]
           time_complexity: string
           space_complexity: string
+          naive_solution: { description: string; time_complexity: string } | null
         } | null
 
         setSolutionData(solution?.code ?? null)
         setThoughtsData(solution?.thoughts ?? null)
         setTimeComplexityData(solution?.time_complexity ?? null)
         setSpaceComplexityData(solution?.space_complexity ?? null)
+        setNaiveSolutionData(solution?.naive_solution ?? null)
       }
     })
     return () => unsubscribe()
@@ -531,6 +541,31 @@ const Solutions: React.FC<SolutionsProps> = ({
 
                 {solutionData && (
                   <>
+                    {/* Naive Solution Section - Only show if it exists */}
+                    {naiveSolutionData && (
+                      <div className="space-y-2">
+                        <h2 className="text-[13px] font-medium text-white tracking-wide">
+                          Naive Solution
+                        </h2>
+                        <div className="text-[13px] leading-[1.4] text-gray-100 bg-yellow-500/10 border border-yellow-500/30 rounded-md p-3">
+                          <div className="space-y-2">
+                            <div className="flex items-start gap-2">
+                              <div className="w-1 h-1 rounded-full bg-yellow-400/80 mt-2 shrink-0" />
+                              <div>
+                                <strong>Approach:</strong> {naiveSolutionData.description}
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <div className="w-1 h-1 rounded-full bg-yellow-400/80 mt-2 shrink-0" />
+                              <div>
+                                <strong>Time Complexity:</strong> {naiveSolutionData.time_complexity}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <ContentSection
                       title={`My Thoughts (${COMMAND_KEY} + Arrow keys to scroll)`}
                       content={
