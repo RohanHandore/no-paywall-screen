@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Sparkles, X, Copy, Loader2 } from "lucide-react";
 
-export const AISuggestionButton = () => {
+interface AISuggestionButtonProps {
+  includeScreenshotContext?: boolean;
+}
+
+export const AISuggestionButton = ({ includeScreenshotContext = false }: AISuggestionButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +20,7 @@ export const AISuggestionButton = () => {
     setCopied(false);
 
     try {
-      const result = await window.electronAPI.generateNextResponse();
+      const result = await window.electronAPI.generateNextResponse(includeScreenshotContext);
       
       if (result.success && result.response) {
         setSuggestion(result.response);
@@ -28,7 +32,7 @@ export const AISuggestionButton = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading]);
+  }, [isLoading, includeScreenshotContext]);
 
   const handleCopy = () => {
     if (suggestion) {

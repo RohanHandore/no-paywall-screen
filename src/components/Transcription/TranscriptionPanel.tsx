@@ -15,6 +15,7 @@ export const TranscriptionPanel = () => {
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [currentSpeaker, setCurrentSpeaker] = useState<"interviewer" | "candidate">("candidate");
   const [hasDeepgramKey, setHasDeepgramKey] = useState(false);
+  const [includeScreenshotContext, setIncludeScreenshotContext] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const micRecorderRef = useRef<MediaRecorder | null>(null);
@@ -248,6 +249,21 @@ export const TranscriptionPanel = () => {
         </div>
       </div>
 
+      {/* Screenshot Context Toggle */}
+      <div className="px-3 py-2 border-b border-white/10 flex items-center gap-2">
+        <label className="flex items-center gap-2 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={includeScreenshotContext}
+            onChange={(e) => setIncludeScreenshotContext(e.target.checked)}
+            className="w-4 h-4 rounded border-white/30 bg-white/5 text-purple-600 focus:ring-purple-500 focus:ring-2 focus:ring-offset-0 cursor-pointer"
+          />
+          <span className="text-xs text-white/70 group-hover:text-white transition">
+            Include screen context for AI suggestions
+          </span>
+        </label>
+      </div>
+
       {/* Transcript List - Chat Style */}
       <div
         ref={scrollRef}
@@ -294,7 +310,7 @@ export const TranscriptionPanel = () => {
 
       {/* AI Suggestion Button - Always render for shortcut to work, but conditionally show */}
       <div className={`p-3 border-t border-white/10 ${transcripts.length > 0 ? '' : 'hidden'}`}>
-        <AISuggestionButton />
+        <AISuggestionButton includeScreenshotContext={includeScreenshotContext} />
       </div>
     </div>
   );

@@ -282,7 +282,7 @@ const electronAPI = {
   },
 
   // AI Interview Helper methods
-  generateNextResponse: () => ipcRenderer.invoke("generate-next-response"),
+  generateNextResponse: (includeScreenshotContext?: boolean) => ipcRenderer.invoke("generate-next-response", includeScreenshotContext),
   clearAITranscriptBuffer: () => ipcRenderer.invoke("clear-ai-transcript-buffer"),
   onTriggerAISuggestion: (callback: () => void) => {
     const subscription = () => callback()

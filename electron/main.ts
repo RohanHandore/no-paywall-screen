@@ -356,7 +356,16 @@ async function createWindow(): Promise<void> {
 
   // Initialize AI interview helper
   if (state.mainWindow) {
-    state.aiInterviewHelper = new AIInterviewHelper(state.mainWindow)
+    // Pass function to get latest screenshot from queue
+    const getLatestScreenshot = () => {
+      const queue = state.screenshotHelper?.getScreenshotQueue() || [];
+      return queue.length > 0 ? queue[queue.length - 1] : null;
+    };
+    // Pass function to take screenshot on-demand
+    const takeScreenshotOnDemand = async () => {
+      return await takeScreenshot();
+    };
+    state.aiInterviewHelper = new AIInterviewHelper(state.mainWindow, getLatestScreenshot, takeScreenshotOnDemand)
   }
 
   // Connect the helpers so transcription data flows to AI helper

@@ -1,6 +1,7 @@
 import { BrowserWindow } from "electron";
 import { configHelper } from "./ConfigHelper";
 import OpenAI from "openai";
+import fs from "fs";
 
 interface TranscriptEntry {
   speaker: "candidate" | "interviewer";
@@ -12,10 +13,26 @@ export class AIInterviewHelper {
   private mainWindow: BrowserWindow | null;
   private openaiClient: OpenAI | null = null;
   private transcriptBuffer: TranscriptEntry[] = [];
+  private getLatestScreenshot: (() => string | null) | null = null;
+  private takeScreenshotOnDemand: (() => Promise<string>) | null = null;
 
-  constructor(mainWindow: BrowserWindow) {
+  constructor(
+    mainWindow: BrowserWindow, 
+    getLatestScreenshot?: () => string | null,
+    takeScreenshotOnDemand?: () => Promise<string>
+  ) {
     this.mainWindow = mainWindow;
+    this.getLatestScreenshot = getLatestScreenshot || null;
+    this.takeScreenshotOnDemand = takeScreenshotOnDemand || null;
     this.initializeOpenAI();
+  }
+
+  setGetLatestScreenshot(fn: () => string | null) {
+    this.getLatestScreenshot = fn;
+  }
+
+  setTakeScreenshotOnDemand(fn: () => Promise<string>) {
+    this.takeScreenshotOnDemand = fn;
   }
 
   private initializeOpenAI() {
@@ -55,8 +72,8 @@ export class AIInterviewHelper {
       .join("\n");
   }
 
-  async generateNextResponse(): Promise<{ success: boolean; response?: string; error?: string }> {
-    console.log("🤖 Generating 'What to Say Next' suggestion...");
+  async generateNextResponse(includeScreenshotContext?: boolean): Promise<{ success: boolean; response?: string; error?: string }> {
+    console.log("🤖 Generating 'What to Say Next' suggestion...", { includeScreenshotContext });
 
     if (!this.openaiClient) {
       return { 
@@ -78,42 +95,121 @@ export class AIInterviewHelper {
       .slice(-1)[0]?.text || "";
 
     try {
-      const prompt = `You are an expert interview coach helping a candidate in a live coding interview.
+      // Get screenshot if requested
+      let screenshotData: string | null = null;
+      if (includeScreenshotContext) {
+        // Always take a fresh screenshot for the most current screen context
+        let screenshotPath: string | null = null;
+        if (this.takeScreenshotOnDemand) {
+          console.log("📸 Taking fresh screenshot for AI suggestion context...");
+          try {
+            screenshotPath = await this.takeScreenshotOnDemand();
+            if (screenshotPath && fs.existsSync(screenshotPath)) {
+              console.log("✅ Fresh screenshot taken successfully:", screenshotPath);
+            } else {
+              console.warn("⚠️ Screenshot was taken but file doesn't exist:", screenshotPath);
+              screenshotPath = null;
+            }
+          } catch (error: any) {
+            console.error("❌ Failed to take screenshot:", error?.message || error);
+            screenshotPath = null;
+          }
+        } else {
+          console.log("⚠️ Cannot take screenshot on-demand - screenshot context unavailable");
+        }
+        
+        // Read screenshot if we have a valid path
+        if (screenshotPath && fs.existsSync(screenshotPath)) {
+          try {
+            screenshotData = fs.readFileSync(screenshotPath).toString('base64');
+            console.log("📸 Including fresh screenshot context in AI suggestion");
+          } catch (error) {
+            console.warn("⚠️ Failed to read screenshot for context:", error);
+          }
+        } else {
+          console.log("⚠️ No screenshot available for context");
+        }
+      }
+
+      const basePrompt = `You are an expert interview coach helping a candidate in a live coding interview.
 
 Here's the recent conversation:
 ${conversationContext}
 
-Last thing the interviewer said: "${lastInterviewerMessage}"
+Last thing the interviewer said: "${lastInterviewerMessage}"`;
 
-Based on this context, provide a natural, confident response that the candidate should say next. 
+      const promptWithScreenshot = screenshotData 
+        ? `${basePrompt}
+
+IMPORTANT: The candidate's screen is also provided as context. Use what you see on the screen (code, UI, problem statement, etc.) to provide a more relevant and contextual response.`
+        : basePrompt;
+
+      const finalPrompt = `${promptWithScreenshot}
+
+Based on this context${screenshotData ? ' and the screen content' : ''}, provide a natural, confident response that the candidate should say next. 
 
 Your response should:
 - Directly answer or address what the interviewer said
 - Show technical knowledge and clear thinking
 - Be conversational and natural (not robotic)
 - Include specific examples or explanations when relevant
+- ${screenshotData ? 'Reference specific details from the screen when relevant (code, UI elements, etc.)' : ''}
 - Be 2-4 sentences long
 
 Provide ONLY the response text that the candidate should say. Do not include any meta-commentary or labels.`;
 
-      const response = await this.openaiClient.chat.completions.create({
-        model: "gpt-4o-mini", // Fast and cost-effective
-        messages: [
-          { 
-            role: "system", 
-            content: "You are an expert interview coach. Provide natural, confident responses that sound like a real person talking in an interview." 
-          },
-          { role: "user", content: prompt }
-        ],
-        max_tokens: 300,
-        temperature: 0.7
-      });
+      // Build messages array
+      const messages: any[] = [
+        { 
+          role: "system", 
+          content: "You are an expert interview coach. Provide natural, confident responses that sound like a real person talking in an interview." 
+        }
+      ];
 
-      const suggestedResponse = response.choices[0].message.content || "";
-      
-      console.log("✅ Generated suggestion:", suggestedResponse.substring(0, 100) + "...");
+      // If screenshot is included, use vision model and add image
+      if (screenshotData) {
+        messages.push({
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: finalPrompt
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/png;base64,${screenshotData}`
+              }
+            }
+          ]
+        });
 
-      return { success: true, response: suggestedResponse };
+        // Use vision-capable model
+        const response = await this.openaiClient.chat.completions.create({
+          model: "gpt-4o", // Vision-capable model
+          messages: messages,
+          max_tokens: 300,
+          temperature: 0.7
+        });
+
+        const suggestedResponse = response.choices[0].message.content || "";
+        console.log("✅ Generated suggestion with screenshot context:", suggestedResponse.substring(0, 100) + "...");
+        return { success: true, response: suggestedResponse };
+      } else {
+        // No screenshot, use text-only model
+        messages.push({ role: "user", content: finalPrompt });
+
+        const response = await this.openaiClient.chat.completions.create({
+          model: "gpt-4o-mini", // Fast and cost-effective
+          messages: messages,
+          max_tokens: 300,
+          temperature: 0.7
+        });
+
+        const suggestedResponse = response.choices[0].message.content || "";
+        console.log("✅ Generated suggestion:", suggestedResponse.substring(0, 100) + "...");
+        return { success: true, response: suggestedResponse };
+      }
 
     } catch (error: any) {
       console.error("❌ Error generating AI suggestion:", error);

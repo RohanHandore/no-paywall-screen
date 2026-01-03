@@ -402,13 +402,13 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   })
 
   // AI Interview Helper handlers
-  ipcMain.handle("generate-next-response", async () => {
+  ipcMain.handle("generate-next-response", async (_event, includeScreenshotContext?: boolean) => {
     try {
       const aiHelper = deps.getAIInterviewHelper()
       if (!aiHelper) {
         return { success: false, error: "AI Interview Helper not initialized" }
       }
-      const result = await aiHelper.generateNextResponse()
+      const result = await aiHelper.generateNextResponse(includeScreenshotContext)
       return result
     } catch (error: any) {
       console.error("Error generating next response:", error)
