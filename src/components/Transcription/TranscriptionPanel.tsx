@@ -15,8 +15,8 @@ export const TranscriptionPanel = () => {
   const [currentSpeaker, setCurrentSpeaker] = useState<"interviewer" | "candidate">("candidate");
   const [hasDeepgramKey, setHasDeepgramKey] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const micRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Check if Deepgram key is configured
   useEffect(() => {
@@ -50,12 +50,15 @@ export const TranscriptionPanel = () => {
   // Listen for transcript events from Electron
   useEffect(() => {
     const unsubscribe = window.electronAPI.onTranscriptReceived(
-      (data: { text: string; isFinal: boolean }) => {
+      (data: { text: string; isFinal: boolean; speaker?: "interviewer" | "candidate" }) => {
         setTranscripts((prev) => {
+          // Use speaker from Deepgram diarization, or fall back to manual selection
+          const speaker = data.speaker || currentSpeaker;
+          
           // If it's interim, update the last non-final entry
           if (!data.isFinal) {
             const lastEntry = prev[prev.length - 1];
-            if (lastEntry && !lastEntry.isFinal && lastEntry.speaker === currentSpeaker) {
+            if (lastEntry && !lastEntry.isFinal && lastEntry.speaker === speaker) {
               return [
                 ...prev.slice(0, -1),
                 { ...lastEntry, text: data.text },
@@ -66,7 +69,7 @@ export const TranscriptionPanel = () => {
               ...prev,
               {
                 id: Date.now().toString(),
-                speaker: currentSpeaker,
+                speaker: speaker,
                 text: data.text,
                 timestamp: new Date(),
                 isFinal: false,
@@ -76,7 +79,7 @@ export const TranscriptionPanel = () => {
           
           // Final transcript
           const lastEntry = prev[prev.length - 1];
-          if (lastEntry && !lastEntry.isFinal && lastEntry.speaker === currentSpeaker) {
+          if (lastEntry && !lastEntry.isFinal && lastEntry.speaker === speaker) {
             return [
               ...prev.slice(0, -1),
               { ...lastEntry, text: data.text, isFinal: true },
@@ -87,7 +90,7 @@ export const TranscriptionPanel = () => {
             ...prev,
             {
               id: Date.now().toString(),
-              speaker: currentSpeaker,
+              speaker: speaker,
               text: data.text,
               timestamp: new Date(),
               isFinal: true,
@@ -102,51 +105,49 @@ export const TranscriptionPanel = () => {
 
   // Listen for audio capture requests from Electron
   useEffect(() => {
-    console.log("Setting up audio capture listener...");
+    console.log("Setting up microphone capture...");
     const unsubscribe = window.electronAPI.onStartAudioCapture(async () => {
       console.log("🎤 Received start-audio-capture event from Electron!");
       try {
         console.log("Requesting microphone access...");
-        
-        // Check if getUserMedia is available
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error("getUserMedia is not supported in this browser");
         }
         
-        // Request microphone access
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        // Capture microphone - it will pick up BOTH you and the interviewer
+        const micStream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             channelCount: 1,
             sampleRate: 16000,
-            echoCancellation: true,
-            noiseSuppression: true,
+            echoCancellation: false, // Disable to capture both speakers clearly
+            noiseSuppression: false,  // Disable to keep both voices
           } 
         });
         
         console.log("✅ Microphone access granted!");
-        mediaStreamRef.current = stream;
+        micStreamRef.current = micStream;
 
-        // Create MediaRecorder to capture audio
-        const mediaRecorder = new MediaRecorder(stream, {
+        // Create MediaRecorder for microphone
+        const micRecorder = new MediaRecorder(micStream, {
           mimeType: 'audio/webm;codecs=opus',
         });
         
-        mediaRecorderRef.current = mediaRecorder;
-        console.log("MediaRecorder created");
+        micRecorderRef.current = micRecorder;
 
-        // Send audio data to Electron as it's recorded
-        mediaRecorder.ondataavailable = (event) => {
+        // Send all audio to Deepgram for speaker diarization
+        micRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
-            console.log(`Sending audio chunk: ${event.data.size} bytes`);
             event.data.arrayBuffer().then((buffer) => {
-              window.electronAPI.sendAudioData(buffer);
+              // Send to mic channel - Deepgram will separate speakers automatically
+              window.electronAPI.sendAudioData(buffer, "mic");
             });
           }
         };
 
-        // Start recording in small chunks (100ms)
-        mediaRecorder.start(100);
-        console.log("✅ Microphone capture started!");
+        micRecorder.start(100);
+        console.log("✅ Microphone recording started!");
+        console.log("🎙️ Deepgram will automatically detect and separate speakers");
+
       } catch (error) {
         console.error("❌ Error accessing microphone:", error);
         alert(`Microphone error: ${error}`);
@@ -162,15 +163,16 @@ export const TranscriptionPanel = () => {
     
     if (isRecording) {
       console.log("Stopping recording...");
-      // Stop the media recorder
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
+      
+      // Stop the microphone recorder
+      if (micRecorderRef.current && micRecorderRef.current.state !== 'inactive') {
+        micRecorderRef.current.stop();
       }
       
-      // Stop all tracks in the media stream
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
+      // Stop all microphone tracks
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(track => track.stop());
+        micStreamRef.current = null;
       }
       
       await window.electronAPI.stopTranscription();
@@ -223,20 +225,8 @@ export const TranscriptionPanel = () => {
           <h3 className="text-xs font-medium text-white">Live Transcript</h3>
         </div>
         
-        {/* Speaker Toggle */}
+        {/* Controls */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentSpeaker(s => s === "candidate" ? "interviewer" : "candidate")}
-            className={`text-xs px-2 py-1 rounded transition ${
-              currentSpeaker === "candidate"
-                ? "bg-blue-500/20 text-blue-400"
-                : "bg-purple-500/20 text-purple-400"
-            }`}
-            title="Toggle speaker"
-          >
-            {currentSpeaker === "candidate" ? "🎤 You" : "👤 Them"}
-          </button>
-          
           <button
             onClick={clearTranscripts}
             className="text-xs text-white/60 hover:text-white transition px-2 py-1 rounded hover:bg-white/5"
@@ -252,7 +242,7 @@ export const TranscriptionPanel = () => {
                 : "bg-white/10 text-white/60 hover:bg-white/20"
             }`}
           >
-            {isRecording ? <MicOff size={14} /> : <Mic size={14} />}
+            {isRecording ? <Mic size={14} /> : <MicOff size={14} />}
           </button>
         </div>
       </div>
@@ -265,7 +255,7 @@ export const TranscriptionPanel = () => {
         {transcripts.length === 0 ? (
           <div className="text-xs text-white/40 text-center py-4">
             {isRecording
-              ? "Listening..."
+              ? "🎙️ Listening... Deepgram will automatically separate speakers"
               : "Click the microphone to start recording"}
           </div>
         ) : (

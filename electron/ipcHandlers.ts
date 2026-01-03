@@ -394,10 +394,10 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
   })
 
   // Handler to receive audio data from renderer
-  ipcMain.on("send-audio-data", (_event, audioData: Buffer) => {
+  ipcMain.on("send-audio-data", (_event, audioData: Buffer, source: "mic" | "system" = "mic") => {
     const transcriptionHelper = deps.getTranscriptionHelper()
     if (transcriptionHelper) {
-      transcriptionHelper.sendAudioData(audioData)
+      transcriptionHelper.sendAudioData(audioData, source)
     }
   })
 }

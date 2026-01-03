@@ -4,7 +4,7 @@ import { configHelper } from "./ConfigHelper";
 
 export class TranscriptionHelper {
   private deepgram: any;
-  private liveConnection: any;
+  private liveConnection: any; // Single connection with speaker diarization
   private isActive: boolean = false;
   private mainWindow: BrowserWindow | null;
   private mediaRecorder: any = null;
@@ -26,6 +26,7 @@ export class TranscriptionHelper {
       }
     }
   }
+
 
   async startTranscription(): Promise<{ success: boolean; error?: string }> {
     console.log("🎤 startTranscription called");
@@ -52,26 +53,21 @@ export class TranscriptionHelper {
       
       console.log("✅ Deepgram client ready");
 
-      // Create live transcription connection
+      // Create ONE connection with speaker diarization enabled
       this.liveConnection = this.deepgram.listen.live({
         model: "nova-2",
         language: "en-US",
         smart_format: true,
         interim_results: true,
         punctuate: true,
+        diarize: true, // Enable speaker diarization - Deepgram will automatically detect different speakers
       });
 
       // Set up event listeners
       this.liveConnection.on(LiveTranscriptionEvents.Open, () => {
-        console.log("Deepgram connection opened");
+        console.log("🎙️ Deepgram connection opened with speaker diarization");
         this.isActive = true;
-
-        // Note: Actual microphone capture would require additional setup
-        // For production, you would use a library like node-mic or implement
-        // native audio capture. This is a placeholder showing the structure.
-        console.log("Transcription started - ready to receive audio");
         
-        // Send status to renderer
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send("transcription-status", {
             active: true,
@@ -80,28 +76,35 @@ export class TranscriptionHelper {
         }
       });
 
-      this.liveConnection.on(
-        LiveTranscriptionEvents.Transcript,
-        (data: any) => {
-          const transcript = data.channel?.alternatives?.[0]?.transcript;
-          const isFinal = data.is_final;
+      this.liveConnection.on(LiveTranscriptionEvents.Transcript, (data: any) => {
+        const transcript = data.channel?.alternatives?.[0]?.transcript;
+        const isFinal = data.is_final;
+        
+        // Get speaker from Deepgram's diarization
+        const words = data.channel?.alternatives?.[0]?.words;
+        let speakerId = null;
+        if (words && words.length > 0) {
+          speakerId = words[0].speaker; // 0, 1, 2, etc.
+        }
 
-          if (transcript && transcript.length > 0) {
-            console.log(`Transcript [${isFinal ? "final" : "interim"}]:`, transcript);
-            
-            // Send to renderer
-            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-              this.mainWindow.webContents.send("transcript-received", {
-                text: transcript,
-                isFinal: isFinal,
-              });
-            }
+        if (transcript && transcript.length > 0) {
+          // Map speaker IDs: 0 = candidate (you), 1+ = interviewer
+          const speaker = speakerId === 0 ? "candidate" : "interviewer";
+          
+          console.log(`${speaker === "candidate" ? "🎤 YOU" : "👤 INTERVIEWER"} [${isFinal ? "FINAL" : "interim"}]: "${transcript}"`);
+          
+          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send("transcript-received", {
+              text: transcript,
+              isFinal: isFinal,
+              speaker: speaker,
+            });
           }
         }
-      );
+      });
 
       this.liveConnection.on(LiveTranscriptionEvents.Error, (error: any) => {
-        console.error("Deepgram error:", error);
+        console.error("❌ Deepgram error:", error);
         
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send("transcription-error", {
@@ -145,18 +148,19 @@ export class TranscriptionHelper {
   }
   
   // Method to receive audio data from renderer process
-  sendAudioData(audioData: Buffer) {
-    if (this.liveConnection && this.isActive) {
-      try {
-        this.liveConnection.send(audioData);
-      } catch (error) {
-        console.error("Error sending audio to Deepgram:", error);
-      }
+  sendAudioData(audioData: Buffer, source: "mic" | "system" = "mic") {
+    if (!this.isActive || !this.liveConnection) return;
+
+    try {
+      // Send audio to Deepgram - it will automatically detect and separate speakers
+      this.liveConnection.send(audioData);
+    } catch (error) {
+      console.error(`❌ Error sending audio to Deepgram:`, error);
     }
   }
 
   stopTranscription() {
-    console.log("Stopping transcription");
+    console.log("🛑 Stopping transcription");
     
     if (this.liveConnection) {
       try {
@@ -169,7 +173,6 @@ export class TranscriptionHelper {
     
     if (this.mediaRecorder) {
       try {
-        // Stop the media recorder if it exists
         if (typeof this.mediaRecorder.stop === 'function') {
           this.mediaRecorder.stop();
         }
@@ -181,6 +184,14 @@ export class TranscriptionHelper {
     
     this.isActive = false;
     this.audioChunks = [];
+    
+    // Notify renderer
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send("transcription-status", {
+        active: false,
+        message: "Recording stopped",
+      });
+    }
   }
 
   isTranscribing(): boolean {

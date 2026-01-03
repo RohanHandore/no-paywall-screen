@@ -249,8 +249,8 @@ const electronAPI = {
   startTranscription: () => ipcRenderer.invoke("start-transcription"),
   stopTranscription: () => ipcRenderer.invoke("stop-transcription"),
   checkDeepgramKey: () => ipcRenderer.invoke("check-deepgram-key"),
-  sendAudioData: (audioData: ArrayBuffer) => {
-    ipcRenderer.send("send-audio-data", Buffer.from(audioData))
+  sendAudioData: (audioData: ArrayBuffer, source: "mic" | "system" = "mic") => {
+    ipcRenderer.send("send-audio-data", Buffer.from(audioData), source)
   },
   onStartAudioCapture: (callback: () => void) => {
     const subscription = () => callback()

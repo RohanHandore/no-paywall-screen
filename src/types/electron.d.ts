@@ -67,9 +67,9 @@ export interface ElectronAPI {
   startTranscription: () => Promise<{ success: boolean; error?: string }>
   stopTranscription: () => Promise<{ success: boolean; error?: string }>
   checkDeepgramKey: () => Promise<boolean>
-  sendAudioData: (audioData: ArrayBuffer) => void
+  sendAudioData: (audioData: ArrayBuffer, source?: "mic" | "system") => void
   onStartAudioCapture: (callback: () => void) => () => void
-  onTranscriptReceived: (callback: (data: { text: string; isFinal: boolean }) => void) => () => void
+  onTranscriptReceived: (callback: (data: { text: string; isFinal: boolean; speaker?: "interviewer" | "candidate" }) => void) => () => void
   onTranscriptionStatus: (callback: (data: { active: boolean; message: string }) => void) => () => void
   onTranscriptionError: (callback: (data: { error: string }) => void) => () => void
   onShowSettings: (callback: () => void) => () => void
