@@ -5,6 +5,8 @@ import { app } from "electron"
 import { EventEmitter } from "events"
 import { OpenAI } from "openai"
 
+export type InterviewMode = "coding" | "system-design-hld" | "system-design-lld";
+
 interface Config {
   apiKey: string;
   apiProvider: "openai" | "gemini" | "anthropic";  // Added provider selection
@@ -14,6 +16,7 @@ interface Config {
   language: string;
   opacity: number;
   deepgramApiKey?: string;  // API key for live transcription
+  interviewMode?: InterviewMode;  // Interview mode selection
 }
 
 export class ConfigHelper extends EventEmitter {
@@ -26,7 +29,8 @@ export class ConfigHelper extends EventEmitter {
     debuggingModel: "gemini-2.0-flash",
     language: "python",
     opacity: 1.0,
-    deepgramApiKey: ""  // Default empty Deepgram API key
+    deepgramApiKey: "",  // Default empty Deepgram API key
+    interviewMode: "coding"  // Default to coding interview mode
   };
 
   constructor() {

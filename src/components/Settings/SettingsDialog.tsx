@@ -177,6 +177,8 @@ interface SettingsDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+type InterviewMode = "coding" | "system-design-hld" | "system-design-lld";
+
 export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDialogProps) {
   const [open, setOpen] = useState(externalOpen || false);
   const [apiKey, setApiKey] = useState("");
@@ -185,6 +187,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
   const [solutionModel, setSolutionModel] = useState("gpt-4o");
   const [debuggingModel, setDebuggingModel] = useState("gpt-4o");
   const [deepgramApiKey, setDeepgramApiKey] = useState("");
+  const [interviewMode, setInterviewMode] = useState<InterviewMode>("coding");
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
 
@@ -215,6 +218,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
         solutionModel?: string;
         debuggingModel?: string;
         deepgramApiKey?: string;
+        interviewMode?: InterviewMode;
       }
 
       window.electronAPI
@@ -226,6 +230,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
           setSolutionModel(config.solutionModel || "gpt-4o");
           setDebuggingModel(config.debuggingModel || "gpt-4o");
           setDeepgramApiKey(config.deepgramApiKey || "");
+          setInterviewMode(config.interviewMode || "coding");
         })
         .catch((error: unknown) => {
           console.error("Failed to load config:", error);
@@ -267,6 +272,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
         solutionModel,
         debuggingModel,
         deepgramApiKey,
+        interviewMode,
       });
       
       if (result) {
@@ -460,9 +466,90 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
               )}
             </div>
           </div>
+
+          {/* Interview Mode Selection */}
+          <div className="space-y-2 mt-6 pt-6 border-t border-white/10">
+            <label className="text-sm font-medium text-white mb-2 block">
+              Interview Mode
+            </label>
+            <p className="text-xs text-white/50 mb-3">
+              Select the type of interview you're preparing for
+            </p>
+            
+            <div className="space-y-2">
+              {/* Coding Interview */}
+              <button
+                onClick={() => setInterviewMode("coding")}
+                className={`w-full text-left p-3 rounded-lg border transition ${
+                  interviewMode === "coding"
+                    ? "bg-blue-500/20 border-blue-500/50 text-white"
+                    : "bg-black/30 border-white/10 text-white/70 hover:bg-white/5"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-lg">💻</div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">Coding Interview</div>
+                    <div className="text-xs opacity-70">
+                      Solve coding problems with AI-powered solutions
+                    </div>
+                  </div>
+                  {interviewMode === "coding" && (
+                    <div className="text-blue-400">✓</div>
+                  )}
+                </div>
+              </button>
+
+              {/* System Design - High Level */}
+              <button
+                onClick={() => setInterviewMode("system-design-hld")}
+                className={`w-full text-left p-3 rounded-lg border transition ${
+                  interviewMode === "system-design-hld"
+                    ? "bg-purple-500/20 border-purple-500/50 text-white"
+                    : "bg-black/30 border-white/10 text-white/70 hover:bg-white/5"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-lg">🏗️</div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">System Design - High Level</div>
+                    <div className="text-xs opacity-70">
+                      Architecture design, scalability, and trade-offs
+                    </div>
+                  </div>
+                  {interviewMode === "system-design-hld" && (
+                    <div className="text-purple-400">✓</div>
+                  )}
+                </div>
+              </button>
+
+              {/* System Design - Low Level */}
+              <button
+                onClick={() => setInterviewMode("system-design-lld")}
+                className={`w-full text-left p-3 rounded-lg border transition ${
+                  interviewMode === "system-design-lld"
+                    ? "bg-green-500/20 border-green-500/50 text-white"
+                    : "bg-black/30 border-white/10 text-white/70 hover:bg-white/5"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="text-lg">🔧</div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">System Design - Low Level</div>
+                    <div className="text-xs opacity-70">
+                      Class design, APIs, and design patterns
+                    </div>
+                  </div>
+                  {interviewMode === "system-design-lld" && (
+                    <div className="text-green-400">✓</div>
+                  )}
+                </div>
+              </button>
+            </div>
+          </div>
           
           {/* Deepgram API Key Section */}
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2 mt-6 pt-6 border-t border-white/10">
             <label className="text-sm font-medium text-white" htmlFor="deepgramApiKey">
               Deepgram API Key (Optional - for live transcription)
             </label>

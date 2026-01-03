@@ -55,8 +55,8 @@ export interface ElectronAPI {
   getPlatform: () => string
   
   // New methods for OpenAI integration
-  getConfig: () => Promise<{ apiKey: string; model: string; deepgramApiKey?: string }>
-  updateConfig: (config: { apiKey?: string; model?: string; deepgramApiKey?: string }) => Promise<boolean>
+  getConfig: () => Promise<{ apiKey: string; model: string; deepgramApiKey?: string; interviewMode?: "coding" | "system-design-hld" | "system-design-lld" }>
+  updateConfig: (config: { apiKey?: string; model?: string; deepgramApiKey?: string; interviewMode?: "coding" | "system-design-hld" | "system-design-lld" }) => Promise<boolean>
   checkApiKey: () => Promise<boolean>
   validateApiKey: (apiKey: string) => Promise<{ valid: boolean; error?: string }>
   openLink: (url: string) => void
