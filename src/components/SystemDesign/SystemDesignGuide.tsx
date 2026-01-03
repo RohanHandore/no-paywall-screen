@@ -216,14 +216,14 @@ export const SystemDesignGuide = ({ mode }: SystemDesignGuideProps) => {
   }, [currentStageIndex]);
 
   return (
-    <div className="flex gap-3 h-full p-4">
+    <div className="flex gap-3 px-4 py-3">
       {/* Left: Transcription Panel */}
       <div className="w-80 flex-shrink-0">
         <TranscriptionPanel />
       </div>
 
       {/* Right: AI Guidance */}
-      <div className="flex-1 space-y-3 overflow-y-auto">
+      <div className="flex-1 space-y-3">
         {/* Stage Progress Header */}
         <div className="bg-black/60 rounded-lg p-4 border border-white/10">
           <div className="flex items-center justify-between mb-3">
