@@ -74,6 +74,10 @@ export interface ElectronAPI {
   onTranscriptionError: (callback: (data: { error: string }) => void) => () => void
   onShowSettings: (callback: () => void) => () => void
   deleteLastScreenshot: () => Promise<{ success: boolean; error?: string }>
+  
+  // AI Interview Helper methods
+  generateNextResponse: () => Promise<{ success: boolean; response?: string; error?: string }>
+  clearAITranscriptBuffer: () => Promise<{ success: boolean; error?: string }>
 }
 
 declare global {

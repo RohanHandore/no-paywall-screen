@@ -1,6 +1,7 @@
 import { createClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { BrowserWindow } from "electron";
 import { configHelper } from "./ConfigHelper";
+import { AIInterviewHelper } from "./AIInterviewHelper";
 
 export class TranscriptionHelper {
   private deepgram: any;
@@ -9,10 +10,15 @@ export class TranscriptionHelper {
   private mainWindow: BrowserWindow | null;
   private mediaRecorder: any = null;
   private audioChunks: any[] = [];
+  private aiInterviewHelper: AIInterviewHelper | null = null;
 
   constructor(mainWindow: BrowserWindow) {
     this.mainWindow = mainWindow;
     this.initializeDeepgram();
+  }
+
+  setAIInterviewHelper(aiHelper: AIInterviewHelper) {
+    this.aiInterviewHelper = aiHelper;
   }
 
   private initializeDeepgram() {
@@ -92,6 +98,11 @@ export class TranscriptionHelper {
           const speaker = speakerId === 0 ? "candidate" : "interviewer";
           
           console.log(`${speaker === "candidate" ? "🎤 YOU" : "👤 INTERVIEWER"} [${isFinal ? "FINAL" : "interim"}]: "${transcript}"`);
+          
+          // Forward final transcripts to AI Interview Helper
+          if (isFinal && this.aiInterviewHelper) {
+            this.aiInterviewHelper.addTranscript(speaker, transcript);
+          }
           
           if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send("transcript-received", {

@@ -400,4 +400,32 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
       transcriptionHelper.sendAudioData(audioData, source)
     }
   })
+
+  // AI Interview Helper handlers
+  ipcMain.handle("generate-next-response", async () => {
+    try {
+      const aiHelper = deps.getAIInterviewHelper()
+      if (!aiHelper) {
+        return { success: false, error: "AI Interview Helper not initialized" }
+      }
+      const result = await aiHelper.generateNextResponse()
+      return result
+    } catch (error: any) {
+      console.error("Error generating next response:", error)
+      return { success: false, error: error.message || "Failed to generate response" }
+    }
+  })
+
+  ipcMain.handle("clear-ai-transcript-buffer", () => {
+    try {
+      const aiHelper = deps.getAIInterviewHelper()
+      if (aiHelper) {
+        aiHelper.clearBuffer()
+      }
+      return { success: true }
+    } catch (error: any) {
+      console.error("Error clearing AI transcript buffer:", error)
+      return { success: false, error: error.message }
+    }
+  })
 }

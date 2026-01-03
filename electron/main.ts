@@ -6,6 +6,7 @@ import { ProcessingHelper } from "./ProcessingHelper"
 import { ScreenshotHelper } from "./ScreenshotHelper"
 import { ShortcutsHelper } from "./shortcuts"
 import { TranscriptionHelper } from "./TranscriptionHelper"
+import { AIInterviewHelper } from "./AIInterviewHelper"
 import { initAutoUpdater } from "./autoUpdater"
 import { configHelper } from "./ConfigHelper"
 import * as dotenv from "dotenv"
@@ -32,6 +33,7 @@ const state = {
   shortcutsHelper: null as ShortcutsHelper | null,
   processingHelper: null as ProcessingHelper | null,
   transcriptionHelper: null as TranscriptionHelper | null,
+  aiInterviewHelper: null as AIInterviewHelper | null,
 
   // View and state management
   view: "queue" as "queue" | "solutions" | "debug",
@@ -101,6 +103,7 @@ export interface IIpcHandlerDeps {
   ) => Promise<{ success: boolean; error?: string }>
   getImagePreview: (filepath: string) => Promise<string>
   getTranscriptionHelper: () => TranscriptionHelper | null
+  getAIInterviewHelper: () => AIInterviewHelper | null
   processingHelper: ProcessingHelper | null
   PROCESSING_EVENTS: typeof state.PROCESSING_EVENTS
   takeScreenshot: () => Promise<string>
@@ -351,6 +354,17 @@ async function createWindow(): Promise<void> {
     state.transcriptionHelper = new TranscriptionHelper(state.mainWindow)
   }
 
+  // Initialize AI interview helper
+  if (state.mainWindow) {
+    state.aiInterviewHelper = new AIInterviewHelper(state.mainWindow)
+  }
+
+  // Connect the helpers so transcription data flows to AI helper
+  if (state.transcriptionHelper && state.aiInterviewHelper) {
+    state.transcriptionHelper.setAIInterviewHelper(state.aiInterviewHelper)
+    console.log("Connected transcription helper to AI interview helper")
+  }
+
   // Initialize window state
   const bounds = state.mainWindow.getBounds()
   state.windowPosition = { x: bounds.x, y: bounds.y }
@@ -567,6 +581,7 @@ async function initializeApp() {
       getImagePreview,
       processingHelper: state.processingHelper,
       getTranscriptionHelper,
+      getAIInterviewHelper,
       PROCESSING_EVENTS: state.PROCESSING_EVENTS,
       takeScreenshot,
       getView,
@@ -661,6 +676,10 @@ function getScreenshotHelper(): ScreenshotHelper | null {
 
 function getTranscriptionHelper(): TranscriptionHelper | null {
   return state.transcriptionHelper
+}
+
+function getAIInterviewHelper(): AIInterviewHelper | null {
+  return state.aiInterviewHelper
 }
 
 function getProblemInfo(): any {

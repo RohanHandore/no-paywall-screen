@@ -279,7 +279,11 @@ const electronAPI = {
     return () => {
       ipcRenderer.removeListener("transcription-error", subscription)
     }
-  }
+  },
+
+  // AI Interview Helper methods
+  generateNextResponse: () => ipcRenderer.invoke("generate-next-response"),
+  clearAITranscriptBuffer: () => ipcRenderer.invoke("clear-ai-transcript-buffer")
 }
 
 // Before exposing the API

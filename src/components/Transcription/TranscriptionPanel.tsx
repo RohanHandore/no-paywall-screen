@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Mic, MicOff } from "lucide-react";
+import { AISuggestionButton } from "../Interview/AISuggestionButton";
 
 interface TranscriptEntry {
   id: string;
@@ -290,6 +291,13 @@ export const TranscriptionPanel = () => {
           ))
         )}
       </div>
+
+      {/* AI Suggestion Button */}
+      {transcripts.length > 0 && (
+        <div className="p-3 border-t border-white/10">
+          <AISuggestionButton />
+        </div>
+      )}
     </div>
   );
 };
