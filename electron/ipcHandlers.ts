@@ -359,4 +359,45 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
       return { success: false, error: "Failed to toggle click-through" }
     }
   })
+
+  // Transcription handlers
+  ipcMain.handle("start-transcription", async () => {
+    try {
+      const transcriptionHelper = deps.getTranscriptionHelper()
+      if (!transcriptionHelper) {
+        return { success: false, error: "Transcription helper not initialized" }
+      }
+      const result = await transcriptionHelper.startTranscription()
+      return result
+    } catch (error: any) {
+      console.error("Error starting transcription:", error)
+      return { success: false, error: error.message || "Failed to start transcription" }
+    }
+  })
+
+  ipcMain.handle("stop-transcription", async () => {
+    try {
+      const transcriptionHelper = deps.getTranscriptionHelper()
+      if (!transcriptionHelper) {
+        return { success: false, error: "Transcription helper not initialized" }
+      }
+      transcriptionHelper.stopTranscription()
+      return { success: true }
+    } catch (error: any) {
+      console.error("Error stopping transcription:", error)
+      return { success: false, error: error.message || "Failed to stop transcription" }
+    }
+  })
+
+  ipcMain.handle("check-deepgram-key", () => {
+    return configHelper.hasDeepgramApiKey()
+  })
+
+  // Handler to receive audio data from renderer
+  ipcMain.on("send-audio-data", (_event, audioData: Buffer) => {
+    const transcriptionHelper = deps.getTranscriptionHelper()
+    if (transcriptionHelper) {
+      transcriptionHelper.sendAudioData(audioData)
+    }
+  })
 }

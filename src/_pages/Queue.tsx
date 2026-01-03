@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import ScreenshotQueue from "../components/Queue/ScreenshotQueue"
 import QueueCommands from "../components/Queue/QueueCommands"
+import { TranscriptionPanel } from "../components/Transcription/TranscriptionPanel"
 
 import { useToast } from "../contexts/toast"
 import { Screenshot } from "../types/screenshots"
@@ -137,22 +138,30 @@ const Queue: React.FC<QueueProps> = ({
   };
   
   return (
-    <div ref={contentRef} className={`bg-transparent w-1/2`}>
-      <div className="px-4 py-3">
-        <div className="space-y-3 w-fit">
-          <ScreenshotQueue
-            isLoading={false}
-            screenshots={screenshots}
-            onDeleteScreenshot={handleDeleteScreenshot}
-          />
+    <div ref={contentRef} className="bg-transparent">
+      <div className="flex gap-3 px-4 py-3">
+        {/* Left column - Transcription Panel */}
+        <div className="w-80 flex-shrink-0">
+          <TranscriptionPanel />
+        </div>
+        
+        {/* Right column - Queue content */}
+        <div className="flex-1">
+          <div className="space-y-3 w-fit">
+            <ScreenshotQueue
+              isLoading={false}
+              screenshots={screenshots}
+              onDeleteScreenshot={handleDeleteScreenshot}
+            />
 
-          <QueueCommands
-            onTooltipVisibilityChange={handleTooltipVisibilityChange}
-            screenshotCount={screenshots.length}
-            credits={credits}
-            currentLanguage={currentLanguage}
-            setLanguage={setLanguage}
-          />
+            <QueueCommands
+              onTooltipVisibilityChange={handleTooltipVisibilityChange}
+              screenshotCount={screenshots.length}
+              credits={credits}
+              currentLanguage={currentLanguage}
+              setLanguage={setLanguage}
+            />
+          </div>
         </div>
       </div>
     </div>

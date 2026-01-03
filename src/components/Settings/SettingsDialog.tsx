@@ -184,6 +184,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
   const [extractionModel, setExtractionModel] = useState("gpt-4o");
   const [solutionModel, setSolutionModel] = useState("gpt-4o");
   const [debuggingModel, setDebuggingModel] = useState("gpt-4o");
+  const [deepgramApiKey, setDeepgramApiKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
 
@@ -213,6 +214,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
         extractionModel?: string;
         solutionModel?: string;
         debuggingModel?: string;
+        deepgramApiKey?: string;
       }
 
       window.electronAPI
@@ -223,6 +225,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
           setExtractionModel(config.extractionModel || "gpt-4o");
           setSolutionModel(config.solutionModel || "gpt-4o");
           setDebuggingModel(config.debuggingModel || "gpt-4o");
+          setDeepgramApiKey(config.deepgramApiKey || "");
         })
         .catch((error: unknown) => {
           console.error("Failed to load config:", error);
@@ -263,6 +266,7 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
         extractionModel,
         solutionModel,
         debuggingModel,
+        deepgramApiKey,
       });
       
       if (result) {
@@ -454,6 +458,41 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
                   <p className="text-xs text-white/60">3. Create a new API key and paste it here</p>
                 </>
               )}
+            </div>
+          </div>
+          
+          {/* Deepgram API Key Section */}
+          <div className="space-y-2 mt-4">
+            <label className="text-sm font-medium text-white" htmlFor="deepgramApiKey">
+              Deepgram API Key (Optional - for live transcription)
+            </label>
+            <Input
+              id="deepgramApiKey"
+              type="password"
+              value={deepgramApiKey}
+              onChange={(e) => setDeepgramApiKey(e.target.value)}
+              placeholder="Enter your Deepgram API key"
+              className="bg-black/50 border-white/10 text-white"
+            />
+            {deepgramApiKey && (
+              <p className="text-xs text-white/50">
+                Current: {maskApiKey(deepgramApiKey)}
+              </p>
+            )}
+            <p className="text-xs text-white/50">
+              For live interview transcription. Your API key is stored locally and never sent to any server except Deepgram.
+            </p>
+            <div className="mt-2 p-2 rounded-md bg-white/5 border border-white/10">
+              <p className="text-xs text-white/80 mb-1">Don't have a Deepgram API key?</p>
+              <p className="text-xs text-white/60 mb-1">1. Create an account at <button 
+                onClick={() => openExternalLink('https://console.deepgram.com/')} 
+                className="text-blue-400 hover:underline cursor-pointer">Deepgram Console</button>
+              </p>
+              <p className="text-xs text-white/60 mb-1">2. Go to the <button 
+                onClick={() => openExternalLink('https://console.deepgram.com/project/api-keys')} 
+                className="text-blue-400 hover:underline cursor-pointer">API Keys</button> section
+              </p>
+              <p className="text-xs text-white/60">3. Create a new API key and paste it here</p>
             </div>
           </div>
           

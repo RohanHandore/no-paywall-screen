@@ -13,6 +13,7 @@ interface Config {
   debuggingModel: string;
   language: string;
   opacity: number;
+  deepgramApiKey?: string;  // API key for live transcription
 }
 
 export class ConfigHelper extends EventEmitter {
@@ -24,7 +25,8 @@ export class ConfigHelper extends EventEmitter {
     solutionModel: "gemini-2.0-flash",
     debuggingModel: "gemini-2.0-flash",
     language: "python",
-    opacity: 1.0
+    opacity: 1.0,
+    deepgramApiKey: ""  // Default empty Deepgram API key
   };
 
   constructor() {
@@ -220,6 +222,14 @@ export class ConfigHelper extends EventEmitter {
   public hasApiKey(): boolean {
     const config = this.loadConfig();
     return !!config.apiKey && config.apiKey.trim().length > 0;
+  }
+  
+  /**
+   * Check if the Deepgram API key is configured
+   */
+  public hasDeepgramApiKey(): boolean {
+    const config = this.loadConfig();
+    return !!config.deepgramApiKey && config.deepgramApiKey.trim().length > 0;
   }
   
   /**

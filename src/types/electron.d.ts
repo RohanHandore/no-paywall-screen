@@ -55,13 +55,25 @@ export interface ElectronAPI {
   getPlatform: () => string
   
   // New methods for OpenAI integration
-  getConfig: () => Promise<{ apiKey: string; model: string }>
-  updateConfig: (config: { apiKey?: string; model?: string }) => Promise<boolean>
+  getConfig: () => Promise<{ apiKey: string; model: string; deepgramApiKey?: string }>
+  updateConfig: (config: { apiKey?: string; model?: string; deepgramApiKey?: string }) => Promise<boolean>
   checkApiKey: () => Promise<boolean>
   validateApiKey: (apiKey: string) => Promise<{ valid: boolean; error?: string }>
   openLink: (url: string) => void
   onApiKeyInvalid: (callback: () => void) => () => void
   removeListener: (eventName: string, callback: (...args: any[]) => void) => void
+  
+  // Transcription methods
+  startTranscription: () => Promise<{ success: boolean; error?: string }>
+  stopTranscription: () => Promise<{ success: boolean; error?: string }>
+  checkDeepgramKey: () => Promise<boolean>
+  sendAudioData: (audioData: ArrayBuffer) => void
+  onStartAudioCapture: (callback: () => void) => () => void
+  onTranscriptReceived: (callback: (data: { text: string; isFinal: boolean }) => void) => () => void
+  onTranscriptionStatus: (callback: (data: { active: boolean; message: string }) => void) => () => void
+  onTranscriptionError: (callback: (data: { error: string }) => void) => () => void
+  onShowSettings: (callback: () => void) => () => void
+  deleteLastScreenshot: () => Promise<{ success: boolean; error?: string }>
 }
 
 declare global {

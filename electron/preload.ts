@@ -243,7 +243,43 @@ const electronAPI = {
       ipcRenderer.removeListener("delete-last-screenshot", subscription)
     }
   },
-  deleteLastScreenshot: () => ipcRenderer.invoke("delete-last-screenshot")
+  deleteLastScreenshot: () => ipcRenderer.invoke("delete-last-screenshot"),
+  
+  // Transcription methods
+  startTranscription: () => ipcRenderer.invoke("start-transcription"),
+  stopTranscription: () => ipcRenderer.invoke("stop-transcription"),
+  checkDeepgramKey: () => ipcRenderer.invoke("check-deepgram-key"),
+  sendAudioData: (audioData: ArrayBuffer) => {
+    ipcRenderer.send("send-audio-data", Buffer.from(audioData))
+  },
+  onStartAudioCapture: (callback: () => void) => {
+    const subscription = () => callback()
+    ipcRenderer.on("start-audio-capture", subscription)
+    return () => {
+      ipcRenderer.removeListener("start-audio-capture", subscription)
+    }
+  },
+  onTranscriptReceived: (callback: (data: { text: string; isFinal: boolean }) => void) => {
+    const subscription = (_: any, data: { text: string; isFinal: boolean }) => callback(data)
+    ipcRenderer.on("transcript-received", subscription)
+    return () => {
+      ipcRenderer.removeListener("transcript-received", subscription)
+    }
+  },
+  onTranscriptionStatus: (callback: (data: { active: boolean; message: string }) => void) => {
+    const subscription = (_: any, data: { active: boolean; message: string }) => callback(data)
+    ipcRenderer.on("transcription-status", subscription)
+    return () => {
+      ipcRenderer.removeListener("transcription-status", subscription)
+    }
+  },
+  onTranscriptionError: (callback: (data: { error: string }) => void) => {
+    const subscription = (_: any, data: { error: string }) => callback(data)
+    ipcRenderer.on("transcription-error", subscription)
+    return () => {
+      ipcRenderer.removeListener("transcription-error", subscription)
+    }
+  }
 }
 
 // Before exposing the API

@@ -5,6 +5,7 @@ import { initializeIpcHandlers } from "./ipcHandlers"
 import { ProcessingHelper } from "./ProcessingHelper"
 import { ScreenshotHelper } from "./ScreenshotHelper"
 import { ShortcutsHelper } from "./shortcuts"
+import { TranscriptionHelper } from "./TranscriptionHelper"
 import { initAutoUpdater } from "./autoUpdater"
 import { configHelper } from "./ConfigHelper"
 import * as dotenv from "dotenv"
@@ -30,6 +31,7 @@ const state = {
   screenshotHelper: null as ScreenshotHelper | null,
   shortcutsHelper: null as ShortcutsHelper | null,
   processingHelper: null as ProcessingHelper | null,
+  transcriptionHelper: null as TranscriptionHelper | null,
 
   // View and state management
   view: "queue" as "queue" | "solutions" | "debug",
@@ -98,6 +100,7 @@ export interface IIpcHandlerDeps {
     path: string
   ) => Promise<{ success: boolean; error?: string }>
   getImagePreview: (filepath: string) => Promise<string>
+  getTranscriptionHelper: () => TranscriptionHelper | null
   processingHelper: ProcessingHelper | null
   PROCESSING_EVENTS: typeof state.PROCESSING_EVENTS
   takeScreenshot: () => Promise<string>
@@ -343,6 +346,11 @@ async function createWindow(): Promise<void> {
   state.mainWindow.on("resize", handleWindowResize)
   state.mainWindow.on("closed", handleWindowClosed)
 
+  // Initialize transcription helper
+  if (state.mainWindow) {
+    state.transcriptionHelper = new TranscriptionHelper(state.mainWindow)
+  }
+
   // Initialize window state
   const bounds = state.mainWindow.getBounds()
   state.windowPosition = { x: bounds.x, y: bounds.y }
@@ -558,6 +566,7 @@ async function initializeApp() {
       deleteScreenshot,
       getImagePreview,
       processingHelper: state.processingHelper,
+      getTranscriptionHelper,
       PROCESSING_EVENTS: state.PROCESSING_EVENTS,
       takeScreenshot,
       getView,
@@ -648,6 +657,10 @@ function setView(view: "queue" | "solutions" | "debug"): void {
 
 function getScreenshotHelper(): ScreenshotHelper | null {
   return state.screenshotHelper
+}
+
+function getTranscriptionHelper(): TranscriptionHelper | null {
+  return state.transcriptionHelper
 }
 
 function getProblemInfo(): any {

@@ -5,6 +5,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism"
 
 import ScreenshotQueue from "../components/Queue/ScreenshotQueue"
+import { TranscriptionPanel } from "../components/Transcription/TranscriptionPanel"
 
 import { ProblemStatementData } from "../types/solutions"
 import SolutionCommands from "../components/Solutions/SolutionCommands"
@@ -474,34 +475,41 @@ const Solutions: React.FC<SolutionsProps> = ({
         />
       ) : (
         <div ref={contentRef} className="relative">
-          <div className="space-y-3 px-4 py-3">
-          {/* Conditionally render the screenshot queue if solutionData is available */}
-          {solutionData && (
-            <div className="bg-transparent w-fit">
-              <div className="pb-3">
-                <div className="space-y-3 w-fit">
-                  <ScreenshotQueue
-                    isLoading={debugProcessing}
-                    screenshots={extraScreenshots}
-                    onDeleteScreenshot={handleDeleteExtraScreenshot}
-                  />
-                </div>
-              </div>
+          <div className="flex gap-3 px-4 py-3">
+            {/* Left column - Transcription Panel */}
+            <div className="w-80 flex-shrink-0">
+              <TranscriptionPanel />
             </div>
-          )}
+            
+            {/* Right column - Main content */}
+            <div className="flex-1 space-y-3">
+              {/* Conditionally render the screenshot queue if solutionData is available */}
+              {solutionData && (
+                <div className="bg-transparent w-fit">
+                  <div className="pb-3">
+                    <div className="space-y-3 w-fit">
+                      <ScreenshotQueue
+                        isLoading={debugProcessing}
+                        screenshots={extraScreenshots}
+                        onDeleteScreenshot={handleDeleteExtraScreenshot}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-          {/* Navbar of commands with the SolutionsHelper */}
-          <SolutionCommands
-            onTooltipVisibilityChange={handleTooltipVisibilityChange}
-            isProcessing={!problemStatementData || !solutionData}
-            extraScreenshots={extraScreenshots}
-            credits={credits}
-            currentLanguage={currentLanguage}
-            setLanguage={setLanguage}
-          />
+              {/* Navbar of commands with the SolutionsHelper */}
+              <SolutionCommands
+                onTooltipVisibilityChange={handleTooltipVisibilityChange}
+                isProcessing={!problemStatementData || !solutionData}
+                extraScreenshots={extraScreenshots}
+                credits={credits}
+                currentLanguage={currentLanguage}
+                setLanguage={setLanguage}
+              />
 
-          {/* Main Content - Modified width constraints */}
-          <div className="w-full text-sm text-black bg-black/60 rounded-md">
+              {/* Main Content - Modified width constraints */}
+              <div className="w-full text-sm text-black bg-black/60 rounded-md">
             <div className="rounded-lg overflow-hidden">
               <div className="px-4 py-3 space-y-4 max-w-full">
                 {!solutionData && (
@@ -561,9 +569,10 @@ const Solutions: React.FC<SolutionsProps> = ({
                 )}
               </div>
             </div>
+            </div>
+            </div>
           </div>
         </div>
-      </div>
       )}
     </>
   )
