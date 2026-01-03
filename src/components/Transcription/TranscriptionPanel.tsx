@@ -292,12 +292,10 @@ export const TranscriptionPanel = () => {
         )}
       </div>
 
-      {/* AI Suggestion Button */}
-      {transcripts.length > 0 && (
-        <div className="p-3 border-t border-white/10">
-          <AISuggestionButton />
-        </div>
-      )}
+      {/* AI Suggestion Button - Always render for shortcut to work, but conditionally show */}
+      <div className={`p-3 border-t border-white/10 ${transcripts.length > 0 ? '' : 'hidden'}`}>
+        <AISuggestionButton />
+      </div>
     </div>
   );
 };

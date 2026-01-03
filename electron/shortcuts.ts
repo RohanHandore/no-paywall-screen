@@ -165,6 +165,24 @@ export class ShortcutsHelper {
       this.deps.toggleClickThrough()
     })
     
+    // Trigger AI suggestion shortcut (Ctrl+1 or Cmd+1)
+    const aiSuggestionShortcut = globalShortcut.register("CommandOrControl+1", () => {
+      console.log("✅ Command/Ctrl + 1 pressed. Triggering AI suggestion.")
+      const mainWindow = this.deps.getMainWindow()
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        console.log("Sending trigger-ai-suggestion event to renderer")
+        mainWindow.webContents.send("trigger-ai-suggestion")
+      } else {
+        console.warn("Main window not available when shortcut was pressed")
+      }
+    })
+    
+    if (!aiSuggestionShortcut) {
+      console.error("❌ Failed to register AI suggestion shortcut (Ctrl+1)")
+    } else {
+      console.log("✅ AI suggestion shortcut registered successfully: Ctrl+1")
+    }
+    
     // Unregister shortcuts when quitting
     app.on("will-quit", () => {
       globalShortcut.unregisterAll()

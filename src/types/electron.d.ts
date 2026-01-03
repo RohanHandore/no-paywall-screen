@@ -78,6 +78,7 @@ export interface ElectronAPI {
   // AI Interview Helper methods
   generateNextResponse: () => Promise<{ success: boolean; response?: string; error?: string }>
   clearAITranscriptBuffer: () => Promise<{ success: boolean; error?: string }>
+  onTriggerAISuggestion: (callback: () => void) => () => void
 }
 
 declare global {

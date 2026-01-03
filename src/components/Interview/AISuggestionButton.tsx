@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sparkles, X, Copy, Loader2 } from "lucide-react";
 
 export const AISuggestionButton = () => {
@@ -7,7 +7,9 @@ export const AISuggestionButton = () => {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const handleGetSuggestion = async () => {
+  const handleGetSuggestion = useCallback(async () => {
+    if (isLoading) return; // Prevent multiple simultaneous requests
+    
     setIsLoading(true);
     setError(null);
     setSuggestion(null);
@@ -26,7 +28,7 @@ export const AISuggestionButton = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoading]);
 
   const handleCopy = () => {
     if (suggestion) {
@@ -40,6 +42,21 @@ export const AISuggestionButton = () => {
     setSuggestion(null);
     setError(null);
   };
+
+  // Listen for keyboard shortcut (Ctrl+1 or Cmd+1)
+  // This listener is always active, even if the component is conditionally rendered
+  useEffect(() => {
+    console.log("AISuggestionButton: Setting up shortcut listener for Ctrl+1")
+    const unsubscribe = window.electronAPI.onTriggerAISuggestion(() => {
+      console.log("AISuggestionButton: Shortcut triggered, calling handleGetSuggestion")
+      handleGetSuggestion();
+    });
+
+    return () => {
+      console.log("AISuggestionButton: Cleaning up shortcut listener")
+      unsubscribe();
+    };
+  }, [handleGetSuggestion]);
 
   return (
     <div className="space-y-3">
